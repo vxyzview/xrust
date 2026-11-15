@@ -1,5 +1,8 @@
 package com.xrust.app.ui.screens
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -45,7 +48,8 @@ fun InstallerScreen(installer: AlpineInstaller, onDone: () -> Unit) {
         // at 480dp, and scrollable when landscape height is tight.
         ResponsivePane(maxContentWidth = 480.dp) {
             Column(
-                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                    .animateContentSize().padding(20.dp),
             ) {
                 Text(
                 "Installs the official Alpine ${Releases.forAbi(abi).version} " +
@@ -61,8 +65,14 @@ fun InstallerScreen(installer: AlpineInstaller, onDone: () -> Unit) {
                 )
             }
             if (busy) {
+                // The bar glides to each percentage instead of stepping.
+                val animatedPercent by animateFloatAsState(
+                    targetValue = percent / 100f,
+                    animationSpec = tween(300),
+                    label = "installProgress",
+                )
                 LinearProgressIndicator(
-                    progress = { percent / 100f },
+                    progress = { animatedPercent },
                     Modifier.fillMaxWidth().padding(top = 16.dp),
                 )
             }

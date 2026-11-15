@@ -1,5 +1,31 @@
 # Release notes
 
+## v1.3.0 — Material You expressive pass
+
+### Shape system (app-wide)
+- New app shape vocabulary, rounder than M3 defaults: text fields/chips 10dp,
+  cards 18dp, FABs 24dp, dialogs and sheets 28dp. Every component across all
+  12 screens inherits it from the theme.
+
+### Typography scale
+- Full explicit type scale (display 30sp → label 11sp) with real line
+  heights; list titles tightened to M3's 16sp with semibold weight, so
+  hierarchy reads consistently instead of per-screen.
+- Monospace carries the terminal vernacular in small doses: status lines,
+  metadata labels, chips.
+
+### Motion
+- Install progress bar glides between percentages (animated float) instead
+  of stepping; state changes on the installer page and the home status card
+  resize smoothly (animateContentSize) instead of jumping.
+- Screen transitions (fade + slide, ~200ms) were already in place and stay.
+
+### Home screen hero
+- The Alpine status card is now the one expressive element: the status
+  reads as terminal output (`$ xrust status` → `alpine 3.24.4 ready`) on a
+  primary container, with "Open shell" as a tonal secondary action. The
+  rest of the home screen stays quiet Material You.
+
 ## v1.2.0 — Material You, and the fixes that matter
 
 ### Fixed

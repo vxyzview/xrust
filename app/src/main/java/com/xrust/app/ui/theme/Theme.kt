@@ -2,14 +2,29 @@ package com.xrust.app.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 
 /** App theme modes (settings). */
 enum class ThemeMode { SYSTEM, ALPINE_DARK, ALPINE_LIGHT, AMOLED, ROSE_ASH }
+
+/**
+ * The app shape system — rounder than the M3 defaults for an expressive
+ * feel: fields/chips 10dp, cards 18dp, FABs 24dp, dialogs/sheets 28dp.
+ */
+private val XrustShapes = Shapes(
+    extraSmall = RoundedCornerShape(10.dp),
+    small = RoundedCornerShape(14.dp),
+    medium = RoundedCornerShape(18.dp),
+    large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(28.dp),
+)
 
 @Composable
 fun xrustTheme(
@@ -22,7 +37,7 @@ fun xrustTheme(
     if (mode == ThemeMode.SYSTEM && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         val ctx = LocalContext.current
         val dyn = if (dark) dynamicDarkColorScheme(ctx) else dynamicLightColorScheme(ctx)
-        MaterialTheme(colorScheme = dyn, typography = AppTypography, content = content)
+        MaterialTheme(colorScheme = dyn, typography = AppTypography, shapes = XrustShapes, content = content)
     } else {
         val scheme = when (mode) {
             ThemeMode.SYSTEM -> if (dark) ALPINE_DARK else ALPINE_LIGHT
@@ -31,6 +46,6 @@ fun xrustTheme(
             ThemeMode.AMOLED -> AMOLED_BLACK
             ThemeMode.ROSE_ASH -> ROSE_ASH
         }
-        MaterialTheme(colorScheme = scheme.scheme, typography = AppTypography, content = content)
+        MaterialTheme(colorScheme = scheme.scheme, typography = AppTypography, shapes = XrustShapes, content = content)
     }
 }
