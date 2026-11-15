@@ -13,11 +13,11 @@ jobs:
       run:
         working-directory: xrust-core
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.83.0
+      - uses: actions/checkout@v7.0.1
+      - uses: dtolnay/rust-toolchain@1.120.0
         with:
           components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2.9.3
       - run: cargo fmt --all --check
       - run: cargo clippy --all-targets -- -D warnings
       - name: Unit tests
@@ -27,8 +27,8 @@ jobs:
     name: Kotlin build (debug APK)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v5
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-java@v6.3.0
         with:
           distribution: temurin
           java-version: 17
@@ -39,7 +39,7 @@ jobs:
           ./scripts/build-android-rust.sh
       - name: gradle assembleDebug
         run: ./gradlew assembleDebug --stacktrace
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: debug-apk
           path: app/build/outputs/apk/debug/*.apk

@@ -6,6 +6,8 @@ set -euo pipefail
 
 cd "$(dirname "$0")/../xrust-core"
 
+# jniLibs is not tracked (see .gitignore); fresh clones don't have it.
+mkdir -p ../app/src/main/jniLibs
 OUT="$(cd ../app/src/main/jniLibs && pwd)"
 ABIS=(arm64-v8a armeabi-v7a x86_64 x86)
 if [[ "${1:-}" == "--abi" ]]; then

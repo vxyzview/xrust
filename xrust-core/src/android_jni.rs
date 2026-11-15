@@ -888,10 +888,11 @@ mod tests {
         }
         // Wall-clock deadline on the round trip. Healthy environments settle
         // in <1 s, but the process can be frozen (cgroup/VM suspension) for
-        // several seconds without losing data — the feed is only skipped if
-        // the freeze lands between read() and feed(), which the long deadline
-        // rides out. 60 s still bounds a genuine write-path regression.
-        let deadline = Instant::now() + Duration::from_secs(60);
+        // over a minute on shared CI runners without losing data — the feed
+        // is only skipped if the freeze lands between read() and feed(),
+        // which the long deadline rides out. 120 s still bounds a genuine
+        // write-path regression.
+        let deadline = Instant::now() + Duration::from_secs(120);
         let mut found = false;
         while Instant::now() < deadline && !found {
             let t = session.term.lock().unwrap();

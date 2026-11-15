@@ -13,8 +13,8 @@ jobs:
     runs-on: ubuntu-24.04
     environment: release-signing
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v5
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-java@v6.3.0
         with:
           distribution: temurin
           java-version: 17
@@ -42,7 +42,7 @@ jobs:
           cp app/build/outputs/apk/release/*.apk dist/ || true
           ls -la dist
       - name: GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3.0.4
         with:
           draft: true
           prerelease: ${{ contains(github.ref, '-alpha') || contains(github.ref, '-beta') }}

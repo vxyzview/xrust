@@ -1,5 +1,6 @@
 # Built artifacts
 app/build/
+app/src/main/jniLibs/
 .gradle/
 local.properties
 xrust-core/target/
