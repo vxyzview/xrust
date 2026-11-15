@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.xrust.app.data.SettingsRepository
 import com.xrust.app.data.TerminalSettings
+import com.xrust.app.ui.responsive.ResponsivePane
 import com.xrust.app.ui.theme.ALL_TERMINAL_SCHEMES
 
 /** Screen 8: terminal color scheme picker with live palette preview. */
@@ -33,6 +34,7 @@ import com.xrust.app.ui.theme.ALL_TERMINAL_SCHEMES
 @Composable
 fun ColorSchemeScreen(settingsRepo: SettingsRepository, nav: NavHostController) {
     val s by settingsRepo.settings.collectAsState(initial = TerminalSettings())
+    ResponsivePane(maxContentWidth = 640.dp) {
     LazyColumn(Modifier.fillMaxSize().padding(bottom = 16.dp)) {
         item { TopAppBar(title = { Text("Color schemes") }) }
         items(ALL_TERMINAL_SCHEMES, key = { it.name }) { scheme ->
@@ -74,5 +76,6 @@ fun ColorSchemeScreen(settingsRepo: SettingsRepository, nav: NavHostController) 
                 }
             }
         }
+    }
     }
 }

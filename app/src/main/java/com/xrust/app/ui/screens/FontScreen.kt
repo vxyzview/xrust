@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -22,13 +23,19 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.xrust.app.data.SettingsRepository
 import com.xrust.app.data.TerminalSettings
+import com.xrust.app.ui.responsive.ResponsivePane
 
 /** Screen 7: font family/size/spacing. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FontScreen(settingsRepo: SettingsRepository, nav: NavHostController) {
     val s by settingsRepo.settings.collectAsState(initial = TerminalSettings())
-    Column(Modifier.fillMaxSize().padding(bottom = 24.dp)) {
+    // Sliders stack tall: scroll + centered cap keeps them reachable on any
+    // window shape.
+    ResponsivePane(maxContentWidth = 600.dp) {
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
+    ) {
         TopAppBar(title = { Text("Font") })
         Text("Family", Modifier.padding(16.dp, 8.dp), style = MaterialTheme.typography.titleMedium)
         Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp)) {
@@ -73,5 +80,6 @@ fun FontScreen(settingsRepo: SettingsRepository, nav: NavHostController) {
             Modifier.padding(16.dp),
             fontSize = (s.fontSizeSp * s.fontDpiScale / 100).sp,
         )
+    }
     }
 }

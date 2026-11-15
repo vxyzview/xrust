@@ -27,6 +27,7 @@ import androidx.navigation.NavHostController
 import com.xrust.app.data.Profile
 import com.xrust.app.data.ProfilesStore
 import com.xrust.app.ui.nav.Routes
+import com.xrust.app.ui.responsive.ResponsivePane
 
 /** Screen 10: profile list with import/export. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,6 +48,8 @@ fun ProfilesScreen(profilesStore: ProfilesStore, nav: NavHostController) {
             }) { Icon(Icons.Filled.Add, "add") }
         },
     ) { padding ->
+        // Centered, capped width keeps profile cards readable on tablets.
+        ResponsivePane(maxContentWidth = 600.dp) {
         LazyColumn(Modifier.fillMaxSize().padding(padding)) {
             item { TopAppBar(title = { Text("Profiles") }) }
             items(profiles, key = { it.id }) { p ->
@@ -70,6 +73,7 @@ fun ProfilesScreen(profilesStore: ProfilesStore, nav: NavHostController) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+        }
         }
     }
 }

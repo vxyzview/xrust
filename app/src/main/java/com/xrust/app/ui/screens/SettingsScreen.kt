@@ -22,14 +22,16 @@ import androidx.navigation.NavHostController
 import com.xrust.app.data.SettingsRepository
 import com.xrust.app.data.TerminalSettings
 import com.xrust.app.ui.nav.Routes
+import com.xrust.app.ui.responsive.ResponsivePane
 
 /** Screen 5: settings hub. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(settingsRepo: SettingsRepository, nav: NavHostController) {
     val s by settingsRepo.settings.collectAsState(initial = TerminalSettings())
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopAppBar(title = { Text("Settings") })
+    ResponsivePane(maxContentWidth = 600.dp) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            TopAppBar(title = { Text("Settings") })
         ListItem(
             headlineContent = { Text("Display & colors") },
             supportingContent = { Text("Theme, AMOLED pure black, cursor") },
@@ -64,6 +66,7 @@ fun SettingsScreen(settingsRepo: SettingsRepository, nav: NavHostController) {
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        }
     }
 }
 

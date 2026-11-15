@@ -1,5 +1,22 @@
 # Release notes
 
+## Unreleased
+
+### Responsive UI/UX for all window sizes
+- Window-width classes (Material 3 breakpoints, manual — no new
+  dependencies): Compact <600dp, Medium 600–839dp, Expanded ≥840dp.
+- Adaptive navigation: bottom bar on compact phones, side navigation rail
+  on tablets / landscape / split screen; terminal and installer stay
+  fullscreen on every shape.
+- Terminal: extra-keys rail stands vertically in landscape (grid keeps full
+  height), key chips now ≥44dp touch targets, `imePadding` keeps the grid
+  above the soft keyboard.
+- All 12 content screens center and cap their width (480–640dp) on wide
+  windows so lists and text do not stretch edge to edge.
+- Scrollable added where fixed stacks overflowed (Font, Keyboard, Profile
+  editor, Installer); file rows enforce 48dp minimum height; session action
+  row scrolls instead of clipping at 200% font scale.
+
 ## v1.0.0 (initial release)
 
 ### Highlights

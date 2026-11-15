@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.xrust.app.data.Profile
 import com.xrust.app.data.ProfilesStore
+import com.xrust.app.ui.responsive.ResponsivePane
 
 /** Screen 11: profile editor. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,6 +41,8 @@ fun ProfileEditScreen(profilesStore: ProfilesStore, profileId: String, nav: NavH
         error = null
     }
 
+    // Form fields stay near their natural width on any window.
+    ResponsivePane(maxContentWidth = 600.dp) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         TopAppBar(title = { Text("Edit profile") })
         OutlinedTextField(
@@ -111,5 +114,6 @@ fun ProfileEditScreen(profilesStore: ProfilesStore, profileId: String, nav: NavH
             Modifier.padding(12.dp, 0.dp),
         ) { Text("Delete") }
         error?.let { Text(it, Modifier.padding(12.dp), color = MaterialTheme.colorScheme.error) }
+    }
     }
 }

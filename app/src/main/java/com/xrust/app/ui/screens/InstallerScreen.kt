@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
@@ -21,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.xrust.app.installer.AlpineInstaller
 import com.xrust.app.installer.Releases
+import com.xrust.app.ui.responsive.ResponsivePane
 import kotlinx.coroutines.launch
 
 /** Screen 3: Alpine rootfs installer wizard. */
@@ -36,8 +39,13 @@ fun InstallerScreen(installer: AlpineInstaller, onDone: () -> Unit) {
 
     Column(Modifier.fillMaxSize()) {
         TopAppBar(title = { Text("Alpine installer") })
-        Column(Modifier.fillMaxSize().padding(20.dp)) {
-            Text(
+        // Wizard stays readable and reachable on any window: centered, capped
+        // at 480dp, and scrollable when landscape height is tight.
+        ResponsivePane(maxContentWidth = 480.dp) {
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
+            ) {
+                Text(
                 "Installs the official Alpine ${Releases.forAbi(abi).version} " +
                     "minirootfs ($abi) into app-private storage. The archive is " +
                     "SHA-256-verified against dl-cdn.alpinelinux.org before extraction.",
@@ -95,6 +103,7 @@ fun InstallerScreen(installer: AlpineInstaller, onDone: () -> Unit) {
                 ) { Text("Remove rootfs") }
             }
             OutlinedButton(onClick = onDone, Modifier.padding(top = 8.dp)) { Text("Back") }
+            }
         }
     }
 }

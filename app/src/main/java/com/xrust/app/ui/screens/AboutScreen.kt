@@ -13,11 +13,13 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.xrust.app.ui.responsive.ResponsivePane
 
 /** Screen 12: about / help. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen() {
+    ResponsivePane(maxContentWidth = 600.dp) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         TopAppBar(title = { Text("About") })
         Column(Modifier.padding(16.dp)) {
@@ -61,5 +63,6 @@ fun AboutScreen() {
             Text("License", style = MaterialTheme.typography.titleMedium)
             Text("MIT — see LICENSE in the repository.", Modifier.padding(top = 4.dp))
         }
+    }
     }
 }

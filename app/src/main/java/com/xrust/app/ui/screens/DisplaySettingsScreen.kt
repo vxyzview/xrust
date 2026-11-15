@@ -27,12 +27,14 @@ import com.xrust.app.ui.theme.AMOLED_BLACK
 import com.xrust.app.ui.theme.ALL_APP_THEMES
 import com.xrust.app.ui.theme.ROSE_ASH
 import com.xrust.app.ui.theme.ThemeMode
+import com.xrust.app.ui.responsive.ResponsivePane
 
 /** Screen 6: display, theme and cursor settings. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DisplaySettingsScreen(settingsRepo: SettingsRepository, nav: NavHostController) {
     val s by settingsRepo.settings.collectAsState(initial = TerminalSettings())
+    ResponsivePane(maxContentWidth = 600.dp) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         TopAppBar(title = { Text("Display & colors") })
         Text("Theme", Modifier.padding(16.dp, 8.dp), style = MaterialTheme.typography.titleMedium)
@@ -77,6 +79,7 @@ fun DisplaySettingsScreen(settingsRepo: SettingsRepository, nav: NavHostControll
             headlineContent = { Text("Bell flash") },
             trailingContent = { Switch(checked = s.bellFlash, onCheckedChange = { v -> settingsRepo.set { it.copy(bellFlash = v) } }) },
         )
+    }
     }
 }
 

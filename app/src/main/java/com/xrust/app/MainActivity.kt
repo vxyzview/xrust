@@ -3,6 +3,8 @@ package com.xrust.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Description
@@ -13,12 +15,15 @@ import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -38,6 +43,8 @@ import com.xrust.app.nativejni.TerminalNative
 import com.xrust.app.proot.ProotLauncher
 import com.xrust.app.terminal.TerminalController
 import com.xrust.app.ui.nav.Routes
+import com.xrust.app.ui.responsive.WindowWidth
+import com.xrust.app.ui.responsive.rememberWindowWidth
 import com.xrust.app.ui.screens.AboutScreen
 import com.xrust.app.ui.screens.ColorSchemeScreen
 import com.xrust.app.ui.screens.DisplaySettingsScreen
@@ -131,82 +138,98 @@ fun AppRoot(
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
     val route = backStack?.destination?.route ?: Routes.SESSIONS
-    val showBottomBar = route in setOf(Routes.SESSIONS, Routes.FILES, Routes.SETTINGS, Routes.PROFILES, Routes.ABOUT)
+    val topLevel = route in setOf(Routes.SESSIONS, Routes.FILES, Routes.SETTINGS, Routes.PROFILES, Routes.ABOUT)
+    val width = rememberWindowWidth()
 
-    Scaffold(
-        bottomBar = {
-            if (showBottomBar) {
-                NavigationBar {
-                    NavigationBarItem(
-                        selected = route == Routes.SESSIONS,
-                        onClick = { nav.navigate(Routes.SESSIONS) { popUpTo(Routes.SESSIONS) { saveState = true } } },
-                        icon = { Icon(Icons.Filled.Terminal, null) },
-                        label = { Text("Terminals") },
-                    )
-                    NavigationBarItem(
-                        selected = route == Routes.FILES,
-                        onClick = { nav.navigate(Routes.FILES) { popUpTo(Routes.SESSIONS) { saveState = true } } },
-                        icon = { Icon(Icons.Filled.Description, null) },
-                        label = { Text("Files") },
-                    )
-                    NavigationBarItem(
-                        selected = route == Routes.PROFILES,
-                        onClick = { nav.navigate(Routes.PROFILES) { popUpTo(Routes.SESSIONS) { saveState = true } } },
-                        icon = { Icon(Icons.Filled.Person, null) },
-                        label = { Text("Profiles") },
-                    )
-                    NavigationBarItem(
-                        selected = route == Routes.SETTINGS,
-                        onClick = { nav.navigate(Routes.SETTINGS) { popUpTo(Routes.SESSIONS) { saveState = true } } },
-                        icon = { Icon(Icons.Filled.Settings, null) },
-                        label = { Text("Settings") },
-                    )
-                    NavigationBarItem(
-                        selected = route == Routes.ABOUT,
-                        onClick = { nav.navigate(Routes.ABOUT) { popUpTo(Routes.SESSIONS) { saveState = true } } },
-                        icon = { Icon(Icons.Filled.Info, null) },
-                        label = { Text("About") },
+    when {
+        // Fullscreen flows (terminal, installer, editors) keep the whole window.
+        !topLevel -> AppNavHost(nav, Modifier.fillMaxSize())
+        // Compact phones: classic bottom navigation bar.
+        width == WindowWidth.Compact -> Scaffold(
+            bottomBar = { AppBottomBar(nav, route) },
+        ) { padding ->
+            AppNavHost(nav, Modifier.fillMaxSize().padding(padding))
+        }
+        // Medium/expanded windows (tablets, landscape, split screen): a side
+        // rail leaves the content area its full width instead of squeezing it
+        // above an oversized bottom bar.
+        else -> Row(Modifier.fillMaxSize()) {
+            NavigationRail {
+                NavDestinations.forEach { (dest, icon, label) ->
+                    NavigationRailItem(
+                        selected = route == dest,
+                        onClick = { nav.navigate(dest) { popUpTo(Routes.SESSIONS) { saveState = true } } },
+                        icon = { Icon(icon, null) },
+                        label = { Text(label) },
                     )
                 }
             }
-        },
-    ) { padding ->
-        NavHost(nav, startDestination = Routes.SESSIONS, modifier = Modifier.padding(padding)) {
-            composable(Routes.SESSIONS) {
-                SessionsScreen(
-                    installer = installer,
-                    onOpenTerminal = { nav.navigate(Routes.terminal(0)) },
-                    onInstaller = { nav.navigate(Routes.INSTALLER) },
-                )
-            }
-            composable(
-                Routes.TERMINAL,
-                arguments = listOf(navArgument("sessionId") { type = NavType.LongType }),
-            ) { _ ->
-                TerminalScreen(
-                    getController = { getController("alpine-default") },
-                    onClose = { closeController(0); nav.popBackStack() },
-                )
-            }
-            composable(Routes.INSTALLER) { InstallerScreen(installer = installer, onDone = { nav.popBackStack() }) }
-            composable(Routes.FILES) { FileManagerScreen() }
-            composable(Routes.SETTINGS) { SettingsScreen(settingsRepo = settingsRepo, nav = nav) }
-            composable(Routes.DISPLAY) { DisplaySettingsScreen(settingsRepo = settingsRepo, nav = nav) }
-            composable(Routes.FONT) { FontScreen(settingsRepo = settingsRepo, nav = nav) }
-            composable(Routes.SCHEMES) { ColorSchemeScreen(settingsRepo = settingsRepo, nav = nav) }
-            composable(Routes.KEYBOARD) { KeyboardScreen(settingsRepo = settingsRepo, nav = nav) }
-            composable(Routes.PROFILES) { ProfilesScreen(profilesStore = profilesStore, nav = nav) }
-            composable(
-                Routes.PROFILE_EDIT,
-                arguments = listOf(navArgument("profileId") { type = NavType.StringType }),
-            ) { entry ->
-                ProfileEditScreen(
-                    profilesStore = profilesStore,
-                    profileId = entry.arguments?.getString("profileId") ?: "",
-                    nav = nav,
-                )
-            }
-            composable(Routes.ABOUT) { AboutScreen() }
+            AppNavHost(nav, Modifier.fillMaxSize().weight(1f))
         }
+    }
+}
+
+private data class NavDest(val route: String, val icon: ImageVector, val label: String)
+
+private val NavDestinations = listOf(
+    NavDest(Routes.SESSIONS, Icons.Filled.Terminal, "Terminals"),
+    NavDest(Routes.FILES, Icons.Filled.Description, "Files"),
+    NavDest(Routes.PROFILES, Icons.Filled.Person, "Profiles"),
+    NavDest(Routes.SETTINGS, Icons.Filled.Settings, "Settings"),
+    NavDest(Routes.ABOUT, Icons.Filled.Info, "About"),
+)
+
+@Composable
+private fun AppBottomBar(nav: NavHostController, route: String) {
+    NavigationBar {
+        NavDestinations.forEach { dest ->
+            NavigationBarItem(
+                selected = route == dest.route,
+                onClick = { nav.navigate(dest.route) { popUpTo(Routes.SESSIONS) { saveState = true } } },
+                icon = { Icon(dest.icon, null) },
+                label = { Text(dest.label) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun AppNavHost(nav: NavHostController, modifier: Modifier) {
+    NavHost(nav, startDestination = Routes.SESSIONS, modifier = modifier) {
+        composable(Routes.SESSIONS) {
+            SessionsScreen(
+                installer = installer,
+                onOpenTerminal = { nav.navigate(Routes.terminal(0)) },
+                onInstaller = { nav.navigate(Routes.INSTALLER) },
+            )
+        }
+        composable(
+            Routes.TERMINAL,
+            arguments = listOf(navArgument("sessionId") { type = NavType.LongType }),
+        ) { _ ->
+            TerminalScreen(
+                getController = { getController("alpine-default") },
+                onClose = { closeController(0); nav.popBackStack() },
+            )
+        }
+        composable(Routes.INSTALLER) { InstallerScreen(installer = installer, onDone = { nav.popBackStack() }) }
+        composable(Routes.FILES) { FileManagerScreen() }
+        composable(Routes.SETTINGS) { SettingsScreen(settingsRepo = settingsRepo, nav = nav) }
+        composable(Routes.DISPLAY) { DisplaySettingsScreen(settingsRepo = settingsRepo, nav = nav) }
+        composable(Routes.FONT) { FontScreen(settingsRepo = settingsRepo, nav = nav) }
+        composable(Routes.SCHEMES) { ColorSchemeScreen(settingsRepo = settingsRepo, nav = nav) }
+        composable(Routes.KEYBOARD) { KeyboardScreen(settingsRepo = settingsRepo, nav = nav) }
+        composable(Routes.PROFILES) { ProfilesScreen(profilesStore = profilesStore, nav = nav) }
+        composable(
+            Routes.PROFILE_EDIT,
+            arguments = listOf(navArgument("profileId") { type = NavType.StringType }),
+        ) { entry ->
+            ProfileEditScreen(
+                profilesStore = profilesStore,
+                profileId = entry.arguments?.getString("profileId") ?: "",
+                nav = nav,
+            )
+        }
+        composable(Routes.ABOUT) { AboutScreen() }
     }
 }

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -29,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.xrust.app.files.FileManager
+import com.xrust.app.ui.responsive.ResponsivePane
 import java.io.File
 
 /** Screen 4: dual-side file manager (app storage ↔ Alpine rootfs). */
@@ -77,25 +79,29 @@ fun FileManagerScreen() {
         }
         HorizontalDivider()
         val entries = manager.list(side, cwd ?: rootPath)
-        LazyColumn(Modifier.fillMaxSize()) {
-            items(entries, key = { it.path }) { e ->
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                ) {
-                    Icon(if (e.isDir) Icons.Filled.Folder else Icons.Filled.InsertDriveFile, null)
-                    Column(Modifier.padding(start = 10.dp).weight(1f)) {
-                        Text(e.name, style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            if (e.isDir) "directory" else "${e.size} bytes",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    if (!e.isDir) {
-                        IconButton(onClick = { manager.delete(e.path) }) {
-                            Icon(Icons.Filled.Delete, "delete")
+        // Cap list width on wide windows; rows keep a 48dp minimum touch height.
+        ResponsivePane(maxContentWidth = 640.dp) {
+            LazyColumn(Modifier.fillMaxSize()) {
+                items(entries, key = { it.path }) { e ->
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp)
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                    ) {
+                        Icon(if (e.isDir) Icons.Filled.Folder else Icons.Filled.InsertDriveFile, null)
+                        Column(Modifier.padding(start = 10.dp).weight(1f)) {
+                            Text(e.name, style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                if (e.isDir) "directory" else "${e.size} bytes",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        if (!e.isDir) {
+                            IconButton(onClick = { manager.delete(e.path) }) {
+                                Icon(Icons.Filled.Delete, "delete")
+                            }
                         }
                     }
                 }

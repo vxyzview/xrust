@@ -1,5 +1,6 @@
 package com.xrust.app.ui.screens
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -22,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.xrust.app.installer.AlpineInstaller
+import com.xrust.app.ui.responsive.ResponsivePane
 
 /** Screen 1: session list / home. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,10 +39,13 @@ fun SessionsScreen(
 
     Column(Modifier.fillMaxSize()) {
         TopAppBar(title = { Text("xrust") })
-        LazyColumn(
-            Modifier.fillMaxSize().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
+        // Cap the content width on tablets so cards do not stretch the
+        // whole window; compact phones fill it exactly as before.
+        ResponsivePane(maxContentWidth = 560.dp) {
+            LazyColumn(
+                Modifier.fillMaxSize().padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
             item {
                 Card(
                     colors = CardDefaults.cardColors(
@@ -54,7 +60,9 @@ fun SessionsScreen(
                             style = MaterialTheme.typography.bodyMedium,
                         )
                         Row(
-                            Modifier.fillMaxWidth().padding(top = 8.dp),
+                            Modifier.fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
+                                .padding(top = 8.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Button(onClick = onInstaller) {
@@ -78,6 +86,7 @@ fun SessionsScreen(
                         Button(onClick = onOpenTerminal, Modifier.padding(top = 8.dp)) { Text("Open") }
                     }
                 }
+            }
             }
         }
     }
