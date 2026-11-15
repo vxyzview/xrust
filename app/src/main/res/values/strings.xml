@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">xrust</string>
+    <string name="session_open">Open shell</string>
+    <string name="install_title">Alpine installer</string>
+</resources>

@@ -1,0 +1,22 @@
+[package]
+name = "xrust-core"
+version = "1.0.0"
+edition = "2021"
+rust-version = "1.83"
+description = "xrust terminal core: VT500-style parser, grid model, scrollback, reflow, selection, PTY, JNI bridge"
+license = "MIT"
+
+[lib]
+crate-type = ["lib", "cdylib"]
+
+[dependencies]
+libc = "0.2.169"
+jni = "0.21.1"
+jni-sys = "0.3"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

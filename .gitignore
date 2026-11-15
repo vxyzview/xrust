@@ -1,0 +1,17 @@
+# Built artifacts
+app/build/
+.gradle/
+local.properties
+xrust-core/target/
+*.apk.idsig
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+
+# Build cache symlinks (sandbox tooling)
+.toolchain/
