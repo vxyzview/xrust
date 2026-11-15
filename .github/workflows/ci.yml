@@ -21,7 +21,9 @@ jobs:
       - run: cargo fmt --all --check
       - run: cargo clippy --all-targets -- -D warnings
       - name: Unit tests
-        run: cargo test --lib -- --test-threads=2
+        # Single-threaded: the PTY round-trip test is freeze/interference
+        # sensitive on 2-vCPU runners and the suite costs only seconds more.
+        run: cargo test --lib -- --test-threads=1
 
   gradle:
     name: Kotlin build (debug APK)

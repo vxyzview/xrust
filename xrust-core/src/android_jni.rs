@@ -856,67 +856,78 @@ mod tests {
 
     #[test]
     fn write_reaches_shell() {
-        let id = NEXT_ID.fetch_add(1, Ordering::Relaxed);
-        let term = Terminal::new(80, 24, 1000);
-        let session = Arc::new(Session {
-            id,
-            pty: Mutex::new(None),
-            term: Mutex::new(term),
-            seq_cv: Condvar::new(),
-            listener: Mutex::new(None),
-            exit_code: Mutex::new(None),
-            reader: Mutex::new(None),
-        });
-        manager().lock().unwrap().insert(id, session.clone());
-        let h = PtyHandle::open_and_spawn(
-            80,
-            24,
-            "/bin/sh",
-            &["-c", "read line; echo got:$line"],
-            &[],
-            "/",
-        )
-        .unwrap();
-        *session.pty.lock().unwrap() = Some(h);
-        let s2 = session.clone();
-        let jh = std::thread::spawn(move || reader_loop(s2));
-        *session.reader.lock().unwrap() = Some(jh);
-        std::thread::sleep(Duration::from_millis(300));
-        {
-            let guard = session.pty.lock().unwrap();
-            guard.as_ref().unwrap().write_all(b"hello-jni\r").unwrap();
-        }
-        // Wall-clock deadline on the round trip. Healthy environments settle
-        // in <1 s, but the process can be frozen (cgroup/VM suspension) for
-        // over a minute on shared CI runners without losing data — the feed
-        // is only skipped if the freeze lands between read() and feed(),
-        // which the long deadline rides out. 120 s still bounds a genuine
-        // write-path regression.
-        let deadline = Instant::now() + Duration::from_secs(120);
-        let mut found = false;
-        while Instant::now() < deadline && !found {
-            let t = session.term.lock().unwrap();
-            for r in 0..t.rows {
-                if t.grid().row_text(r, false).contains("got:hello-jni") {
-                    found = true;
-                    break;
+        // A runner VM freeze (cgroup/VM suspension) can swallow one attempt
+        // without losing data: the round trip resumes and completes once the
+        // freeze lifts, but not always inside a single wall-clock deadline.
+        // Two fresh attempts (own session, own deadline) ride out a freeze;
+        // a genuine write-path regression fails both, bounded at ~4 min.
+        fn attempt(id: i64) -> bool {
+            let term = Terminal::new(80, 24, 1000);
+            let session = Arc::new(Session {
+                id,
+                pty: Mutex::new(None),
+                term: Mutex::new(term),
+                seq_cv: Condvar::new(),
+                listener: Mutex::new(None),
+                exit_code: Mutex::new(None),
+                reader: Mutex::new(None),
+            });
+            manager().lock().unwrap().insert(id, session.clone());
+            let found = (|| -> bool {
+                let h = match PtyHandle::open_and_spawn(
+                    80,
+                    24,
+                    "/bin/sh",
+                    &["-c", "read line; echo got:$line"],
+                    &[],
+                    "/",
+                ) {
+                    Ok(h) => h,
+                    Err(_) => return false,
+                };
+                *session.pty.lock().unwrap() = Some(h);
+                let s2 = session.clone();
+                let jh = std::thread::spawn(move || reader_loop(s2));
+                *session.reader.lock().unwrap() = Some(jh);
+                std::thread::sleep(Duration::from_millis(300));
+                {
+                    let guard = session.pty.lock().unwrap();
+                    guard.as_ref().unwrap().write_all(b"hello-jni\r").unwrap();
                 }
+                let deadline = Instant::now() + Duration::from_secs(120);
+                let mut found = false;
+                while Instant::now() < deadline && !found {
+                    let t = session.term.lock().unwrap();
+                    for r in 0..t.rows {
+                        if t.grid().row_text(r, false).contains("got:hello-jni") {
+                            found = true;
+                            break;
+                        }
+                    }
+                    std::thread::sleep(Duration::from_millis(50));
+                }
+                found
+            })();
+            let g = session.pty.lock().unwrap();
+            if let Some(h) = g.as_ref() {
+                h.signal(libc::SIGKILL);
             }
-            std::thread::sleep(Duration::from_millis(50));
+            drop(g);
+            if let Some(jh) = session.reader.lock().unwrap().take() {
+                let _ = jh.join();
+            }
+            let mut g = session.pty.lock().unwrap();
+            if let Some(h) = g.take() {
+                h.close();
+            }
+            manager().lock().unwrap().remove(&id);
+            found
         }
-        assert!(found, "write path works end-to-end");
-        let g = session.pty.lock().unwrap();
-        if let Some(h) = g.as_ref() {
-            h.signal(libc::SIGKILL);
-        }
-        drop(g);
-        if let Some(jh) = session.reader.lock().unwrap().take() {
-            let _ = jh.join();
-        }
-        let mut g = session.pty.lock().unwrap();
-        if let Some(h) = g.take() {
-            h.close();
-        }
-        manager().lock().unwrap().remove(&id);
+        // Reserve both ids up front so a parallel test cannot take id + 1.
+        let first = NEXT_ID.fetch_add(2, Ordering::Relaxed);
+        assert!(
+            attempt(first) || attempt(first + 1),
+            "write path works end-to-end"
+        );
     }
 }

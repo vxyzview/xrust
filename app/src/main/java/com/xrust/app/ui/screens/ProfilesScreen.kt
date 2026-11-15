@@ -54,8 +54,8 @@ fun ProfilesScreen(profilesStore: ProfilesStore, nav: NavHostController) {
             item { TopAppBar(title = { Text("Profiles") }) }
             items(profiles, key = { it.id }, contentType = { "profile" }) { p ->
                 Card(
-                    Modifier.fillMaxWidth().padding(12.dp, 6.dp),
                     onClick = { nav.navigate(Routes.profileEdit(p.id)) },
+                    modifier = Modifier.fillMaxWidth().padding(12.dp, 6.dp),
                 ) {
                     Column(Modifier.padding(14.dp)) {
                         Text(p.name, style = MaterialTheme.typography.titleMedium)

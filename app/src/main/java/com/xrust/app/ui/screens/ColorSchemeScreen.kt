@@ -39,9 +39,9 @@ fun ColorSchemeScreen(settingsRepo: SettingsRepository, nav: NavHostController) 
         item { TopAppBar(title = { Text("Color schemes") }) }
         items(ALL_TERMINAL_SCHEMES, key = { it.name }, contentType = { "scheme" }) { scheme ->
             Card(
-                Modifier.fillMaxWidth().padding(12.dp, 6.dp),
-                shape = RoundedCornerShape(10.dp),
                 onClick = { settingsRepo.set { it.copy(colorScheme = scheme.name) } },
+                modifier = Modifier.fillMaxWidth().padding(12.dp, 6.dp),
+                shape = RoundedCornerShape(10.dp),
             ) {
                 Column(Modifier.padding(12.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {

@@ -22,7 +22,7 @@ class TerminalController(
     initialRows: Int,
     scrollback: Int,
 ) {
-    var snapshot by mutableStateOf(TerminalNative.parseSnapshot(TerminalNative.nativeSnapshot(id)))
+    var snapshot by mutableStateOf(TerminalNative.parseSnapshot(TerminalNative.nativeSnapshot(id) ?: ByteArray(0)))
         private set
     var title by mutableStateOf("")
         private set
@@ -65,7 +65,7 @@ class TerminalController(
     }
 
     private suspend fun refresh() = withContext(Dispatchers.Default) {
-        snapshot = TerminalNative.parseSnapshot(TerminalNative.nativeSnapshot(id))
+        snapshot = TerminalNative.parseSnapshot(TerminalNative.nativeSnapshot(id) ?: ByteArray(0))
         title = TerminalNative.nativeGetTitle(id) ?: title
     }
 

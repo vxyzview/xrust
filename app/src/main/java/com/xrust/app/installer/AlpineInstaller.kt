@@ -85,7 +85,7 @@ class AlpineInstaller(private val context: Context) {
                     while (true) {
                         val entry = tar.nextTarEntry ?: break
                         val name = entry.name
-                        if (name.contains("..") || name.startsWith("/") || name.contains('\0')) {
+                        if (name.contains("..") || name.startsWith("/") || name.contains('\u0000')) {
                             throw IOException("unsafe tar entry: $name")
                         }
                         val target = File(dest, name)

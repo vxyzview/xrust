@@ -7,8 +7,12 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.xrust.app.ui.theme.ThemeMode
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 private val Context.dataStore by preferencesDataStore(name = "settings")
 
@@ -103,34 +107,40 @@ class SettingsRepository(private val context: Context) {
 
     val settings: Flow<TerminalSettings> = context.dataStore.data.map { read(it) }
 
-    suspend fun set(transform: (TerminalSettings) -> TerminalSettings) {
-        context.dataStore.edit { prefs ->
-            val next = transform(read(prefs))
-            prefs[K.theme] = next.themeMode.name
-            prefs[K.fontSize] = next.fontSizeSp
-            prefs[K.fontFamily] = next.fontFamilyId
-            prefs[K.lineHeight] = next.lineHeightPct
-            prefs[K.letterSpacing] = next.letterSpacing
-            prefs[K.cursorShape] = next.cursorShape
-            prefs[K.cursorBlink] = next.cursorBlink
-            prefs[K.colorScheme] = next.colorScheme
-            prefs[K.amoled] = next.amoledPureBlack
-            prefs[K.scrollback] = next.scrollbackLines
-            prefs[K.bellVibrate] = next.bellVibrate
-            prefs[K.bellFlash] = next.bellFlash
-            prefs[K.autoHide] = next.autoHideToolbar
-            prefs[K.keepOn] = next.keepScreenOn
-            prefs[K.bsDelete] = next.backspaceIsDelete
-            prefs[K.altEsc] = next.altAsEsc
-            prefs[K.margin] = next.terminalMarginDp
-            prefs[K.cols] = next.defaultCols
-            prefs[K.rows] = next.defaultRows
-            prefs[K.bracketPaste] = next.bracketedPaste
-            prefs[K.haptic] = next.hapticFeedback
-            prefs[K.extraKeys] = next.extraKeysVisible
-            prefs[K.extraLayout] = next.extraKeysLayout
-            prefs[K.dpiScale] = next.fontDpiScale
-            prefs[K.invertScroll] = next.invertScrollHistory
+    // UI screens call set() from click handlers; persist fire-and-forget on IO.
+    // DataStore serializes edits per store, so rapid toggles stay ordered.
+    private val writeScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    fun set(transform: (TerminalSettings) -> TerminalSettings) {
+        writeScope.launch {
+            context.dataStore.edit { prefs ->
+                val next = transform(read(prefs))
+                prefs[K.theme] = next.themeMode.name
+                prefs[K.fontSize] = next.fontSizeSp
+                prefs[K.fontFamily] = next.fontFamilyId
+                prefs[K.lineHeight] = next.lineHeightPct
+                prefs[K.letterSpacing] = next.letterSpacing
+                prefs[K.cursorShape] = next.cursorShape
+                prefs[K.cursorBlink] = next.cursorBlink
+                prefs[K.colorScheme] = next.colorScheme
+                prefs[K.amoled] = next.amoledPureBlack
+                prefs[K.scrollback] = next.scrollbackLines
+                prefs[K.bellVibrate] = next.bellVibrate
+                prefs[K.bellFlash] = next.bellFlash
+                prefs[K.autoHide] = next.autoHideToolbar
+                prefs[K.keepOn] = next.keepScreenOn
+                prefs[K.bsDelete] = next.backspaceIsDelete
+                prefs[K.altEsc] = next.altAsEsc
+                prefs[K.margin] = next.terminalMarginDp
+                prefs[K.cols] = next.defaultCols
+                prefs[K.rows] = next.defaultRows
+                prefs[K.bracketPaste] = next.bracketedPaste
+                prefs[K.haptic] = next.hapticFeedback
+                prefs[K.extraKeys] = next.extraKeysVisible
+                prefs[K.extraLayout] = next.extraKeysLayout
+                prefs[K.dpiScale] = next.fontDpiScale
+                prefs[K.invertScroll] = next.invertScrollHistory
+            }
         }
     }
 }
