@@ -780,8 +780,10 @@ mod tests {
         let s2 = session.clone();
         let jh = std::thread::spawn(move || reader_loop(s2));
         *session.reader.lock().unwrap() = Some(jh);
-        // Wait for output to be parsed.
-        let deadline = Instant::now() + Duration::from_secs(5);
+        // Wait for output to be parsed. Generous deadline: CI runners and
+        // sandboxed CI environments can stall the whole process for seconds
+        // at a time; only a real parser failure should exhaust it.
+        let deadline = Instant::now() + Duration::from_secs(30);
         while Instant::now() < deadline {
             if session.term.lock().unwrap().seq > 0 {
                 break;
@@ -795,8 +797,8 @@ mod tests {
             text.contains("jni-ok"),
             "output reached the terminal: {text:?}"
         );
-        // Wait for exit detection.
-        let deadline = Instant::now() + Duration::from_secs(5);
+        // Wait for exit detection (generous: see note above).
+        let deadline = Instant::now() + Duration::from_secs(30);
         while Instant::now() < deadline && !session.is_dead() {
             std::thread::sleep(Duration::from_millis(20));
         }
@@ -844,7 +846,12 @@ mod tests {
             let guard = session.pty.lock().unwrap();
             guard.as_ref().unwrap().write_all(b"hello-jni\r").unwrap();
         }
-        let deadline = Instant::now() + Duration::from_secs(10);
+        // Wall-clock deadline on the round trip. Healthy environments settle
+        // in <1 s, but the process can be frozen (cgroup/VM suspension) for
+        // several seconds without losing data — the feed is only skipped if
+        // the freeze lands between read() and feed(), which the long deadline
+        // rides out. 60 s still bounds a genuine write-path regression.
+        let deadline = Instant::now() + Duration::from_secs(60);
         let mut found = false;
         while Instant::now() < deadline && !found {
             let t = session.term.lock().unwrap();

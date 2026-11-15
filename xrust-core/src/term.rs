@@ -80,6 +80,10 @@ pub struct Terminal {
     pub palette_overrides: Vec<(u8, u32)>,
     pub default_fg: Color,
     pub default_bg: Color,
+    /// Persistent VTE parser: keeps escape/UTF-8 state across feeds so a
+    /// multibyte sequence split across PTY read boundaries is rejoined
+    /// instead of dropped (CJK / emoji corruption at 16 KiB read edges).
+    vte: crate::vte::Parser,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -121,6 +125,7 @@ impl Terminal {
             palette_overrides: Vec::new(),
             default_fg: Color::Default,
             default_bg: Color::Default,
+            vte: crate::vte::Parser::new(),
         }
     }
 
@@ -142,8 +147,12 @@ impl Terminal {
 
     /// Feed raw PTY output.
     pub fn feed(&mut self, bytes: &[u8]) {
-        let mut parser = crate::vte::Parser::new();
+        // Swap the persistent parser out so `&mut self` (as Perform) can be
+        // borrowed while feeding; swap it back afterwards. Carried-over
+        // partial escape sequences / UTF-8 tails survive across calls.
+        let mut parser = std::mem::replace(&mut self.vte, crate::vte::Parser::new());
         parser.feed(bytes, self);
+        self.vte = parser;
         self.seq += 1;
     }
 
@@ -1092,6 +1101,24 @@ mod tests {
         t.feed(b"hello");
         assert_eq!(text(&mut t, 0), "hello");
         assert_eq!((t.grid().cursor.row, t.grid().cursor.col), (0, 5));
+    }
+
+    #[test]
+    fn feed_splits_multibyte_across_chunks() {
+        // "中文" = 6 UTF-8 bytes; split at 4 so the second glyph's first byte
+        // lands in feed #1 and its tail in feed #2. The persistent parser
+        // must rejoin them (a per-feed Parser used to drop the tail byte and
+        // corrupt CJK output at PTY read boundaries).
+        let mut t = term();
+        let b = "中文".as_bytes();
+        assert_eq!(b.len(), 6);
+        t.feed(&b[..4]);
+        t.feed(&b[4..]);
+        assert!(
+            text(&mut t, 0).contains("中文"),
+            "got {:?}",
+            text(&mut t, 0)
+        );
     }
 
     #[test]

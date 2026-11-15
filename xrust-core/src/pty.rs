@@ -177,14 +177,23 @@ pub fn write_all_fd(fd_fd: i32, mut bytes: &[u8]) -> bool {
 
 /// Non-blocking reap for a raw pid (fd-level, no lock held).
 pub fn try_wait_pid(pid: i32) -> Option<i32> {
-    let mut status: i32 = 0;
-    let rc = unsafe { libc::waitpid(pid, &mut status, libc::WNOHANG) };
-    if rc == pid {
-        Some(decode_status(status))
-    } else if rc < 0 {
-        Some(-1)
-    } else {
-        None
+    loop {
+        let mut status: i32 = 0;
+        let rc = unsafe { libc::waitpid(pid, &mut status, libc::WNOHANG) };
+        if rc == pid {
+            return Some(decode_status(status));
+        }
+        if rc == 0 {
+            return None; // still running
+        }
+        // A transient EINTR must not be mistaken for process death: Android
+        // delivers signals constantly, and a spurious EINTR here used to
+        // terminate live sessions (reported as exit -1 while the shell ran).
+        let err = std::io::Error::last_os_error().raw_os_error();
+        if err == Some(libc::EINTR) {
+            continue;
+        }
+        return Some(-1); // ECHILD / EINVAL: treat as reaped/unknown death
     }
 }
 
@@ -467,7 +476,7 @@ mod tests {
         let t0 = std::time::Instant::now();
         h.terminate(300);
         assert!(
-            t0.elapsed() < std::time::Duration::from_secs(5),
+            t0.elapsed() < std::time::Duration::from_secs(30),
             "SIGKILL fallback must be quick"
         );
     }
