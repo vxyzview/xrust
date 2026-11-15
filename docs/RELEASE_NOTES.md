@@ -1,5 +1,47 @@
 # Release notes
 
+## v1.2.0 — Material You, and the fixes that matter
+
+### Fixed
+- **SHA-256 verification no longer reports a false mismatch.** Upstream
+  checksum files are `<hash>  <filename>` on one line; the verifier now
+  compares only the hash token, so installing Alpine succeeds instead of
+  failing with "got X, want X" (where X was already equal).
+- **"Open" no longer force-closes.** The terminal route was hardcoded to
+  the Alpine profile even for the host shell card; with no rootfs installed
+  the PRoot launcher threw and killed the process. Routing is now
+  profile-aware (`terminal/{profileId}`): the host shell opens
+  `host-default` directly and needs no rootfs, and each card opens its own
+  profile.
+- **Crash hardening in the controller**: `nativeSnapshot` nullability
+  coalesced at both call sites.
+
+### Material You 3, everywhere
+- Every app theme (Alpine Dark / Alpine Light / AMOLED Pure Black / Rose
+  Ash) now carries a **complete** Material 3 `ColorScheme` — all ~30 tonal
+  roles set explicitly — so no widget falls back to the framework's
+  light-scheme defaults (the source of off-palette pink/blue one-off
+  widgets in v1.1.x).
+- SYSTEM theme uses **dynamic wallpaper-derived color** on Android 12+
+  (dynamicDark/LightColorScheme), falling back to Alpine themes below.
+- Installer errors render in a proper M3 error-container card instead of
+  bare error text.
+
+### Responsive UI/UX for all window sizes
+- Window-width classes (Material 3 breakpoints, manual — no new
+  dependencies): Compact <600dp, Medium 600–839dp, Expanded ≥840dp.
+- Adaptive navigation: bottom bar on compact phones, side navigation rail
+  on tablets / landscape / split screen; terminal and installer stay
+  fullscreen on every shape.
+- Terminal: extra-keys rail stands vertically in landscape (grid keeps full
+  height), key chips now ≥44dp touch targets, `imePadding` keeps the grid
+  above the soft keyboard.
+- All 12 content screens center and cap their width (480–640dp) on wide
+  windows so lists and text do not stretch edge to edge.
+- Scrollable added where fixed stacks overflowed (Font, Keyboard, Profile
+  editor, Installer); file rows enforce 48dp minimum height; session action
+  row scrolls instead of clipping at 200% font scale.
+
 ## v1.1.0 — smooth, faster, fluid
 
 ### Input latency & concurrency (Rust core)
@@ -27,23 +69,6 @@
   display cadence; redundant dispatcher hop removed.
 - LazyList `contentType` hints on Files / Profiles / Color schemes rows
   improve item reuse while scrolling.
-
-## Unreleased
-
-### Responsive UI/UX for all window sizes
-- Window-width classes (Material 3 breakpoints, manual — no new
-  dependencies): Compact <600dp, Medium 600–839dp, Expanded ≥840dp.
-- Adaptive navigation: bottom bar on compact phones, side navigation rail
-  on tablets / landscape / split screen; terminal and installer stay
-  fullscreen on every shape.
-- Terminal: extra-keys rail stands vertically in landscape (grid keeps full
-  height), key chips now ≥44dp touch targets, `imePadding` keeps the grid
-  above the soft keyboard.
-- All 12 content screens center and cap their width (480–640dp) on wide
-  windows so lists and text do not stretch edge to edge.
-- Scrollable added where fixed stacks overflowed (Font, Keyboard, Profile
-  editor, Installer); file rows enforce 48dp minimum height; session action
-  row scrolls instead of clipping at 200% font scale.
 
 ## v1.0.0 (initial release)
 

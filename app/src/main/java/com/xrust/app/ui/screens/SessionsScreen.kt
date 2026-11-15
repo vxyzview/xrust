@@ -31,7 +31,7 @@ import com.xrust.app.ui.responsive.ResponsivePane
 @Composable
 fun SessionsScreen(
     installer: AlpineInstaller,
-    onOpenTerminal: () -> Unit,
+    onOpenTerminal: (String) -> Unit,
     onInstaller: () -> Unit,
 ) {
     var installed by remember { mutableStateOf(installer.isInstalled) }
@@ -69,7 +69,7 @@ fun SessionsScreen(
                                 Text(if (installed) "Manage" else "Install")
                             }
                             if (installed) {
-                                Button(onClick = onOpenTerminal) { Text("Open shell") }
+                                Button(onClick = { onOpenTerminal("alpine-default") }) { Text("Open shell") }
                             }
                         }
                     }
@@ -83,7 +83,10 @@ fun SessionsScreen(
                             "Run Android's ToyBox sh directly. Limited by the OS sandbox.",
                             style = MaterialTheme.typography.bodyMedium,
                         )
-                        Button(onClick = onOpenTerminal, Modifier.padding(top = 8.dp)) { Text("Open") }
+                        // The host shell needs no Alpine rootfs; it opens the
+                        // host profile directly (a rootfs-less alpine profile
+                        // would throw in ProotLauncher).
+                        Button(onClick = { onOpenTerminal("host-default") }, Modifier.padding(top = 8.dp)) { Text("Open") }
                     }
                 }
             }

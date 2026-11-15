@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1660 520" role="img" aria-label="xrust terminal session">
+  <defs>
+    <linearGradient id="glow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0d1420"/>
+      <stop offset="1" stop-color="#0a0e14"/>
+    </linearGradient>
+  </defs>
+
+  <!-- terminal window -->
+  <rect x="30" y="30" width="1600" height="460" rx="26" fill="url(#glow)" stroke="#1e2a38" stroke-width="2"/>
+  <line x1="30" y1="94" x2="1630" y2="94" stroke="#1e2a38" stroke-width="2"/>
+
+  <!-- traffic lights -->
+  <circle cx="80"  cy="62" r="11" fill="#ff5f56"/>
+  <circle cx="116" cy="62" r="11" fill="#ffbd2e"/>
+  <circle cx="152" cy="62" r="11" fill="#27c93f"/>
+
+  <!-- window title -->
+  <text x="830" y="71" text-anchor="middle" font-family="ui-monospace, 'JetBrains Mono', Menlo, Consolas, monospace" font-size="27" fill="#566270">xrust — alpine 3.24.4 · proot 5.5.0</text>
+
+  <!-- session -->
+  <g font-family="ui-monospace, 'JetBrains Mono', Menlo, Consolas, monospace" font-size="34">
+    <text x="90" y="184"><tspan fill="#3fb950" font-weight="bold">$</tspan><tspan fill="#e6edf3"> xrust</tspan></text>
+
+    <text x="90" y="242" fill="#e6edf3">xrust 1.1.0 — rust-first terminal for android</text>
+
+    <text x="90" y="300"><tspan fill="#58a6ff">[core]</tspan><tspan fill="#8b949e"> vt/ecma-48 parser · grid · scrollback · reflow</tspan></text>
+    <text x="1470" y="300" fill="#3fb950">ok</text>
+
+    <text x="90" y="358"><tspan fill="#58a6ff">[alpine]</tspan><tspan fill="#8b949e"> minirootfs 3.24.4 · sha-256 verified upstream</tspan></text>
+    <text x="1470" y="358" fill="#3fb950">ok</text>
+
+    <text x="90" y="416"><tspan fill="#58a6ff">[userland]</tspan><tspan fill="#8b949e"> 28,671 packages available · /bin/sh ready</tspan></text>
+    <text x="1470" y="416" fill="#3fb950">ok</text>
+
+    <text x="90" y="474"><tspan fill="#3fb950" font-weight="bold">$</tspan></text>
+    <rect x="118" y="446" width="22" height="36" fill="#3fb950" opacity="0.85"/>
+  </g>
+</svg>

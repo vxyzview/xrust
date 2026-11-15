@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -66,7 +68,19 @@ fun InstallerScreen(installer: AlpineInstaller, onDone: () -> Unit) {
             }
             Text(progress, Modifier.padding(top = 8.dp), style = MaterialTheme.typography.labelMedium)
             error?.let {
-                Text(it, Modifier.padding(top = 8.dp), color = MaterialTheme.colorScheme.error)
+                Card(
+                    Modifier.fillMaxWidth().padding(top = 12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                    ),
+                ) {
+                    Text(
+                        it,
+                        Modifier.padding(16.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
             }
             Button(
                 onClick = {

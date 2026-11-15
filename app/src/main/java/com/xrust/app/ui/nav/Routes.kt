@@ -3,7 +3,7 @@ package com.xrust.app.ui.nav
 /** The 12 screens of the app. */
 object Routes {
     const val SESSIONS = "sessions"
-    const val TERMINAL = "terminal/{sessionId}"
+    const val TERMINAL = "terminal/{profileId}"
     const val INSTALLER = "installer"
     const val FILES = "files"
     const val SETTINGS = "settings"
@@ -15,6 +15,6 @@ object Routes {
     const val PROFILE_EDIT = "profile/{profileId}"
     const val ABOUT = "about"
 
-    fun terminal(sessionId: Long) = "terminal/$sessionId"
+    fun terminal(profileId: String) = "terminal/$profileId"
     fun profileEdit(profileId: String) = "profile/$profileId"
 }

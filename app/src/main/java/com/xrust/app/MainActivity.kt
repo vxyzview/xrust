@@ -222,16 +222,17 @@ private fun AppNavHost(
         composable(Routes.SESSIONS) {
             SessionsScreen(
                 installer = installer,
-                onOpenTerminal = { nav.navigate(Routes.terminal(0)) },
+                onOpenTerminal = { profileId -> nav.navigate(Routes.terminal(profileId)) },
                 onInstaller = { nav.navigate(Routes.INSTALLER) },
             )
         }
         composable(
             Routes.TERMINAL,
-            arguments = listOf(navArgument("sessionId") { type = NavType.LongType }),
-        ) { _ ->
+            arguments = listOf(navArgument("profileId") { type = NavType.StringType }),
+        ) { entry ->
+            val profileId = entry.arguments?.getString("profileId") ?: "alpine-default"
             TerminalScreen(
-                getController = { getController("alpine-default") },
+                getController = { getController(profileId) },
                 onClose = { closeController(0); nav.popBackStack() },
             )
         }
