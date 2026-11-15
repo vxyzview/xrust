@@ -89,26 +89,33 @@ class AlpineInstaller(private val context: Context) {
                             throw IOException("unsafe tar entry: $name")
                         }
                         val target = File(dest, name)
-                        if (!target.canonicalPath.startsWith(dest.canonicalPath + File.separator)) {
+                        // The tarball's own root entry ("./") resolves to the
+                        // destination itself; entries equal to or inside dest
+                        // are contained — only escapes are traversal attacks.
+                        val targetPath = target.canonicalPath
+                        if (targetPath != dest.canonicalPath &&
+                            !targetPath.startsWith(dest.canonicalPath + File.separator)
+                        ) {
                             throw IOException("traversal blocked: $name")
                         }
                         if (entry.isDirectory) {
                             target.mkdirs()
                         } else {
                             target.parentFile?.mkdirs()
-                            // Reject absolute symlinks; rewrite relative ones into the rootfs.
                             if (entry.isSymbolicLink) {
-                                val link = entry.linkName
-                                if (link.startsWith("/")) {
-                                    throw IOException("absolute symlink rejected: $name -> $link")
-                                }
+                                // Absolute targets ("/bin/busybox") are the
+                                // tarball's own convention: PRoot runs with
+                                // -R rootfs and translates guest-absolute
+                                // link targets at resolution time.
                                 runCatching { target.delete() }
                                 java.nio.file.Files.createSymbolicLink(
                                     target.toPath(),
-                                    java.nio.file.Path.of(link),
+                                    java.nio.file.Path.of(entry.linkName),
                                 )
                             } else {
                                 target.outputStream().use { tar.copyTo(it) }
+                                // Preserve the exec bit — busybox must be runnable.
+                                if (entry.mode and 0b1000000 != 0) target.setExecutable(true)
                             }
                         }
                         entries++

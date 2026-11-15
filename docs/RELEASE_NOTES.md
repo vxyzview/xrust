@@ -1,5 +1,22 @@
 # Release notes
 
+## v1.3.1 — Alpine installs for real
+
+Fixed the extractor against the actual minirootfs tarball (verified
+entry-by-entry against `alpine-minirootfs-3.24.4` from dl-cdn):
+
+- **"traversal blocked: ./"** — the tarball's own root entry `./` resolves
+  to the destination directory itself; the containment check now accepts
+  entries equal to or inside the destination and rejects only escapes.
+- **"absolute symlink rejected"** (would have hit next) — the tarball links
+  every busybox applet as `/usr/bin/<applet> -> /bin/busybox`; those
+  guest-absolute targets are the rootfs's own convention and PRoot (run
+  with `-R rootfs`) translates them at resolution time. They are now
+  created verbatim instead of rejected.
+- **Exec bits were silently dropped** (would have hit next) — extracted
+  files got default permissions, so busybox would not have been runnable.
+  The owner-exec bit from the tar entry mode is now preserved.
+
 ## v1.3.0 — Material You expressive pass
 
 ### Shape system (app-wide)
