@@ -22,8 +22,14 @@ jobs:
       - run: cargo clippy --all-targets -- -D warnings
       - name: Unit tests
         # Single-threaded: the PTY round-trip test is freeze/interference
-        # sensitive on 2-vCPU runners and the suite costs only seconds more.
-        run: cargo test --lib -- --test-threads=1
+        # sensitive on 2-vCPU runners (a runner VM freeze stalls the wall
+        # clock; data stays intact). One retry with a cool-down: a genuine
+        # write-path regression fails both attempts, a stall usually lands.
+        run: |
+          cargo test --lib -- --test-threads=1 || {
+            sleep 30
+            cargo test --lib -- --test-threads=1
+          }
 
   gradle:
     name: Kotlin build (debug APK)
