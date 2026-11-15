@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
@@ -80,7 +81,7 @@ class AlpineInstaller(private val context: Context) {
             dest.mkdirs()
             var entries = 0
             java.util.zip.GZIPInputStream(bytes.inputStream()).use { gz ->
-                java.util.tar.TarArchiveInputStream(gz).use { tar ->
+                TarArchiveInputStream(gz).use { tar ->
                     while (true) {
                         val entry = tar.nextTarEntry ?: break
                         val name = entry.name

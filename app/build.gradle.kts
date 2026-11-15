@@ -75,6 +75,7 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.okhttp)
+    implementation(libs.commons.compress)
     debugImplementation(libs.androidx.compose.ui.tooling)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.kotlinx.serialization.json)

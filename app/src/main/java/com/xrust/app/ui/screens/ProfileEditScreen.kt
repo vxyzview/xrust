@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -49,7 +50,7 @@ fun ProfileEditScreen(profilesStore: ProfilesStore, profileId: String, nav: NavH
             value = p.name,
             onValueChange = { newName -> update { it.copy(name = newName) } },
             label = { Text("Name") },
-            Modifier.fillMaxWidth().padding(12.dp, 6.dp),
+            modifier = Modifier.fillMaxWidth().padding(12.dp, 6.dp),
         )
         Row(Modifier.padding(12.dp, 4.dp)) {
             listOf("alpine", "host").forEach { kind ->
@@ -65,19 +66,19 @@ fun ProfileEditScreen(profilesStore: ProfilesStore, profileId: String, nav: NavH
             value = p.command,
             onValueChange = { cmd -> update { it.copy(command = cmd) } },
             label = { Text("Command") },
-            Modifier.fillMaxWidth().padding(12.dp, 6.dp),
+            modifier = Modifier.fillMaxWidth().padding(12.dp, 6.dp),
         )
         OutlinedTextField(
             value = p.args.joinToString(" "),
             onValueChange = { a -> update { it.copy(args = a.split(" ").filter { t -> t.isNotBlank() }) } },
             label = { Text("Arguments (space separated)") },
-            Modifier.fillMaxWidth().padding(12.dp, 6.dp),
+            modifier = Modifier.fillMaxWidth().padding(12.dp, 6.dp),
         )
         OutlinedTextField(
             value = p.cwd,
             onValueChange = { c -> update { it.copy(cwd = c) } },
             label = { Text("Working directory") },
-            Modifier.fillMaxWidth().padding(12.dp, 6.dp),
+            modifier = Modifier.fillMaxWidth().padding(12.dp, 6.dp),
         )
         OutlinedTextField(
             value = p.env.entries.joinToString("\n") { "${it.key}=${it.value}" },
@@ -92,7 +93,7 @@ fun ProfileEditScreen(profilesStore: ProfilesStore, profileId: String, nav: NavH
                 }
             },
             label = { Text("Environment (KEY=VALUE per line)") },
-            Modifier.fillMaxWidth().padding(12.dp, 6.dp),
+            modifier = Modifier.fillMaxWidth().padding(12.dp, 6.dp),
         )
         HorizontalDivider(Modifier.padding(12.dp))
         Button(

@@ -148,12 +148,12 @@ fun AppRoot(
 
     when {
         // Fullscreen flows (terminal, installer, editors) keep the whole window.
-        !topLevel -> AppNavHost(nav, Modifier.fillMaxSize())
+        !topLevel -> AppNavHost(nav, Modifier.fillMaxSize(), installer, profilesStore, settingsRepo, getController, closeController)
         // Compact phones: classic bottom navigation bar.
         width == WindowWidth.Compact -> Scaffold(
             bottomBar = { AppBottomBar(nav, route) },
         ) { padding ->
-            AppNavHost(nav, Modifier.fillMaxSize().padding(padding))
+            AppNavHost(nav, Modifier.fillMaxSize().padding(padding), installer, profilesStore, settingsRepo, getController, closeController)
         }
         // Medium/expanded windows (tablets, landscape, split screen): a side
         // rail leaves the content area its full width instead of squeezing it
@@ -169,7 +169,7 @@ fun AppRoot(
                     )
                 }
             }
-            AppNavHost(nav, Modifier.fillMaxSize().weight(1f))
+            AppNavHost(nav, Modifier.fillMaxSize().weight(1f), installer, profilesStore, settingsRepo, getController, closeController)
         }
     }
 }
@@ -199,7 +199,15 @@ private fun AppBottomBar(nav: NavHostController, route: String) {
 }
 
 @Composable
-private fun AppNavHost(nav: NavHostController, modifier: Modifier) {
+private fun AppNavHost(
+    nav: NavHostController,
+    modifier: Modifier,
+    installer: AlpineInstaller,
+    profilesStore: ProfilesStore,
+    settingsRepo: SettingsRepository,
+    getController: (String) -> TerminalController,
+    closeController: (Long) -> Unit,
+) {
     NavHost(
         nav,
         startDestination = Routes.SESSIONS,

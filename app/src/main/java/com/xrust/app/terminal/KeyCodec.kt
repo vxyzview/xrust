@@ -24,7 +24,7 @@ object KeyCodec {
         val mods = modsOf(event)
         return when (event.keyCode) {
             KeyEvent.KEYCODE_ENTER -> TerminalNative.nativeEncodeKey(TerminalNative.KEY_ENTER, mods, appCursor, appKeypad)
-            KeyEvent.KEYCODE_DEL, KeyEvent.KEYCODE_BACKSPACE -> TerminalNative.nativeEncodeKey(TerminalNative.KEY_BACKSPACE, mods, appCursor, appKeypad)
+            KeyEvent.KEYCODE_DEL -> TerminalNative.nativeEncodeKey(TerminalNative.KEY_BACKSPACE, mods, appCursor, appKeypad)
             KeyEvent.KEYCODE_TAB -> TerminalNative.nativeEncodeKey(TerminalNative.KEY_TAB, mods, appCursor, appKeypad)
             KeyEvent.KEYCODE_ESCAPE -> TerminalNative.nativeEncodeKey(TerminalNative.KEY_ESCAPE, mods, appCursor, appKeypad)
             KeyEvent.KEYCODE_MOVE_HOME -> TerminalNative.nativeEncodeKey(TerminalNative.KEY_HOME, mods, appCursor, appKeypad)
