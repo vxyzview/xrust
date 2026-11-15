@@ -44,7 +44,7 @@ jobs:
       - name: GitHub release
         uses: softprops/action-gh-release@v3.0.4
         with:
-          draft: true
+          # Published automatically; flip to draft: true for manual review.
           prerelease: ${{ contains(github.ref, '-alpha') || contains(github.ref, '-beta') }}
           files: dist/*
           body_path: docs/RELEASE_NOTES.md
