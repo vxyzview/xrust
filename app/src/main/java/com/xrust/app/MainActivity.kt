@@ -50,7 +50,7 @@ import com.xrust.app.ui.screens.ProfilesScreen
 import com.xrust.app.ui.screens.SessionsScreen
 import com.xrust.app.ui.screens.SettingsScreen
 import com.xrust.app.ui.screens.TerminalScreen
-import com.xrust.app.ui.theme.XrustTheme
+import com.xrust.app.ui.theme.xrustTheme
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -67,7 +67,7 @@ class MainActivity : ComponentActivity() {
         val saved = SessionsStore.load(sessionsFile)
         setContent {
             val settings by settingsRepo.settings.collectAsState(initial = TerminalSettings())
-            XrustTheme(mode = settings.themeMode) {
+            xrustTheme(mode = settings.themeMode) {
                 AppRoot(
                     installer = installer,
                     profilesStore = profilesStore,

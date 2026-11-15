@@ -14,7 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 enum class ThemeMode { SYSTEM, ALPINE_DARK, ALPINE_LIGHT, AMOLED, ROSE_ASH }
 
 @Composable
-fun XrustTheme(
+fun xrustTheme(
     mode: ThemeMode,
     content: @Composable () -> Unit,
 ) {
