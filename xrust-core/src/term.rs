@@ -150,7 +150,7 @@ impl Terminal {
         // Swap the persistent parser out so `&mut self` (as Perform) can be
         // borrowed while feeding; swap it back afterwards. Carried-over
         // partial escape sequences / UTF-8 tails survive across calls.
-        let mut parser = std::mem::replace(&mut self.vte, crate::vte::Parser::new());
+        let mut parser = std::mem::take(&mut self.vte);
         parser.feed(bytes, self);
         self.vte = parser;
         self.seq += 1;

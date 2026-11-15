@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -43,7 +44,10 @@ class TerminalController(
     private suspend fun pollLoop() {
         var lastSeq = TerminalNative.nativeSeq(id)
         while (true) {
-            val seq = withContext(Dispatchers.Default) { TerminalNative.nativePoll(id, lastSeq, 200) }
+            // nativePoll sleeps on the Rust-side condvar and wakes the instant
+            // output arrives — keystroke echo no longer waits up to one 20ms
+            // polling quantum. Runs on this scope's Default dispatcher.
+            val seq = TerminalNative.nativePoll(id, lastSeq, 200)
             if (seq == -1L) {
                 exitCode = TerminalNative.nativeExitCode(id).takeIf { it != Int.MIN_VALUE } ?: 0
                 refresh()
@@ -52,6 +56,10 @@ class TerminalController(
             if (seq != lastSeq) {
                 lastSeq = seq
                 refresh()
+                // Cap the refresh rate under output floods (e.g. `cat` of a
+                // huge file) so the loop cannot spin hot; 8ms keeps updates
+                // above the display cadence while remaining imperceptible.
+                delay(8)
             }
         }
     }

@@ -82,7 +82,7 @@ fun FileManagerScreen() {
         // Cap list width on wide windows; rows keep a 48dp minimum touch height.
         ResponsivePane(maxContentWidth = 640.dp) {
             LazyColumn(Modifier.fillMaxSize()) {
-                items(entries, key = { it.path }) { e ->
+                items(entries, key = { it.path }, contentType = { if (it.isDir) "dir" else "file" }) { e ->
                     Row(
                         Modifier
                             .fillMaxWidth()

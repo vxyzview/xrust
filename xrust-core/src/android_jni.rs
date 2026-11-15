@@ -4,11 +4,15 @@
 //! Lock discipline: the reader thread works on the raw master fd/pid and
 //! never holds the session mutex while polling (holding it across `poll()`
 //! starved concurrent writers for seconds — found by the acceptance test).
-//! The mutex is only taken for short, bounded ops.
+//! Writes to the pty copy the fd under the mutex and write without it
+//! (write_all can block on EAGAIN backpressure; holding the mutex across
+//! that froze concurrent keystrokes). `nativePoll` sleeps on the session
+//! condvar so output wakes the UI within microseconds instead of up to one
+//! 20ms sleep quantum later.
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicI64, Ordering};
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, Condvar, Mutex, OnceLock};
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
@@ -47,6 +51,10 @@ pub struct Session {
     pub id: i64,
     pub pty: Mutex<Option<PtyHandle>>,
     pub term: Mutex<Terminal>,
+    /// Signalled by the reader thread after every feed; `nativePoll` sleeps
+    /// on this instead of a sleep-poll loop, so keystroke echo and program
+    /// output reach the UI at output speed rather than one quantum later.
+    pub seq_cv: Condvar,
     pub listener: Mutex<Option<GlobalRef>>,
     pub exit_code: Mutex<Option<i32>>,
     pub reader: Mutex<Option<JoinHandle<()>>>,
@@ -150,6 +158,9 @@ fn reader_loop(session: Arc<Session>) {
                 };
                 term
             };
+            // Wake poll waiters immediately; they re-check seq under the
+            // term mutex, so this cannot be a lost wakeup.
+            session.seq_cv.notify_all();
             if !responses.is_empty() {
                 crate::pty::write_all_fd(master_fd, &responses);
             }
@@ -249,6 +260,7 @@ pub extern "system" fn Java_com_xrust_app_nativejni_TerminalNative_nativeCreate(
         id,
         pty: Mutex::new(None),
         term: Mutex::new(term),
+        seq_cv: Condvar::new(),
         listener: Mutex::new(None),
         exit_code: Mutex::new(None),
         reader: Mutex::new(None),
@@ -337,11 +349,17 @@ pub extern "system" fn Java_com_xrust_app_nativejni_TerminalNative_nativeWrite(
     };
     let env = _env;
     if let Ok(data) = env.convert_byte_array(&bytes) {
-        let guard = session.pty.lock();
-        if let Ok(g) = guard.as_ref() {
-            if let Some(h) = g.as_ref() {
-                let _ = h.write_all(&data);
-            }
+        // Copy the fd under the mutex, then write without it: write_all can
+        // block on EAGAIN backpressure, and holding the pty mutex across
+        // that froze concurrent keystrokes for up to 200ms each (e.g. pastes
+        // into a flooded pipe). The master fd never changes after spawn.
+        let master = session
+            .pty
+            .lock()
+            .ok()
+            .and_then(|g| g.as_ref().map(|h| h.master));
+        if let Some(fd) = master {
+            let _ = crate::pty::write_all_fd(fd, &data);
         }
     }
 }
@@ -359,11 +377,14 @@ pub extern "system" fn Java_com_xrust_app_nativejni_TerminalNative_nativeWriteSt
     };
     if let Ok(s) = env.get_string(&text) {
         let data = s.to_string_lossy().into_owned().into_bytes();
-        let guard = session.pty.lock();
-        if let Ok(g) = guard.as_ref() {
-            if let Some(h) = g.as_ref() {
-                let _ = h.write_all(&data);
-            }
+        // See nativeWrite: fd copy under the mutex, blocking write without it.
+        let master = session
+            .pty
+            .lock()
+            .ok()
+            .and_then(|g| g.as_ref().map(|h| h.master));
+        if let Some(fd) = master {
+            let _ = crate::pty::write_all_fd(fd, &data);
         }
     }
 }
@@ -386,11 +407,14 @@ pub extern "system" fn Java_com_xrust_app_nativejni_TerminalNative_nativePaste(
             term.paste(&text);
             term.take_responses()
         };
-        let guard = session.pty.lock();
-        if let Ok(g) = guard.as_ref() {
-            if let Some(h) = g.as_ref() {
-                let _ = h.write_all(&resp);
-            }
+        // See nativeWrite: fd copy under the mutex, blocking write without it.
+        let master = session
+            .pty
+            .lock()
+            .ok()
+            .and_then(|g| g.as_ref().map(|h| h.master));
+        if let Some(fd) = master {
+            let _ = crate::pty::write_all_fd(fd, &resp);
         }
     }
 }
@@ -505,18 +529,32 @@ pub extern "system" fn Java_com_xrust_app_nativejni_TerminalNative_nativePoll(
         None => return -1,
     };
     let deadline = Instant::now() + Duration::from_millis(timeout_ms.clamp(0, 2000) as u64);
+    let mut guard = match session.term.lock() {
+        Ok(g) => g,
+        Err(_) => return -1,
+    };
     loop {
         if session.is_dead() {
             return -1;
         }
-        let seq = session.term.lock().map(|t| t.seq as i64).unwrap_or(-1);
+        let seq = guard.seq as i64;
         if seq != last_seq {
             return seq;
         }
-        if Instant::now() >= deadline {
+        let now = Instant::now();
+        if now >= deadline {
             return seq;
         }
-        std::thread::sleep(Duration::from_millis(20));
+        // Sleep on the seq condvar. The predicate was just checked while
+        // holding the term mutex and the reader notifies the same condvar
+        // after every feed, so output wakes this call within microseconds —
+        // instead of up to one 20ms sleep quantum later, with no busy
+        // mutex-churn while idle.
+        let (g, _timed_out) = match session.seq_cv.wait_timeout(guard, deadline - now) {
+            Ok(pair) => pair,
+            Err(_) => return -1,
+        };
+        guard = g;
     }
 }
 
@@ -769,6 +807,7 @@ mod tests {
             id,
             pty: Mutex::new(None),
             term: Mutex::new(term),
+            seq_cv: Condvar::new(),
             listener: Mutex::new(None),
             exit_code: Mutex::new(None),
             reader: Mutex::new(None),
@@ -823,6 +862,7 @@ mod tests {
             id,
             pty: Mutex::new(None),
             term: Mutex::new(term),
+            seq_cv: Condvar::new(),
             listener: Mutex::new(None),
             exit_code: Mutex::new(None),
             reader: Mutex::new(None),

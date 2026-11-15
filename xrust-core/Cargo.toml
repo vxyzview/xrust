@@ -1,6 +1,6 @@
 [package]
 name = "xrust-core"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2021"
 rust-version = "1.83"
 description = "xrust terminal core: VT500-style parser, grid model, scrollback, reflow, selection, PTY, JNI bridge"

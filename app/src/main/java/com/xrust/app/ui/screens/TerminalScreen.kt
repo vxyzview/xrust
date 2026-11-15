@@ -136,6 +136,12 @@ private fun TerminalGrid(
         val cols = (this@BoxWithConstraints.maxWidth / cellW).toInt().coerceAtLeast(2)
         val rows = (this@BoxWithConstraints.maxHeight / cellH).toInt().coerceAtLeast(1)
         LaunchedEffect(cols, rows) { controller.resize(cols, rows) }
+        // Reused across every drawn cell: the old loop allocated a fresh
+        // Paint per visible cell per frame (~1000 objects/frame → GC jank on
+        // scroll floods). Same-style character runs share one drawText call,
+        // cutting JNI text calls by an order of magnitude on normal output.
+        val cellPaint = remember(paint) { android.graphics.Paint(paint) }
+        val runText = remember { StringBuilder(256) }
         Canvas(
             Modifier
                 .fillMaxSize()
@@ -155,11 +161,15 @@ private fun TerminalGrid(
             val snap = controller.snapshot ?: return@Canvas
             val w = cellW.toPx()
             val h = cellH.toPx()
+            val ascent = paint.ascent()
             drawRect(scheme.bgColor())
             for (r in 0 until snap.rows) {
-                for (c in 0 until snap.cols) {
+                val rowTop = r * h
+                val baseline = r * h - ascent
+                var c = 0
+                while (c < snap.cols) {
                     val idx = r * snap.cols + c
-                    if (snap.attrs[idx] and Attr.WIDE_CONT != 0) continue
+                    if (snap.attrs[idx] and Attr.WIDE_CONT != 0) { c++; continue }
                     val bgRaw = snap.bg[idx]
                     val fgRaw = snap.fg[idx]
                     val attrs = snap.attrs[idx]
@@ -167,22 +177,51 @@ private fun TerminalGrid(
                     var fg = if (fgRaw == 0xFFFF_FFFF.toInt()) scheme.fgColor() else argb(fgRaw)
                     if (attrs and Attr.REVERSE != 0) { val t = bg; bg = fg; fg = t }
                     if (bg != scheme.bgColor()) {
-                        drawRect(bg, topLeft = Offset(c * w, r * h), size = Size(w, h))
+                        drawRect(bg, topLeft = Offset(c * w, rowTop), size = Size(w, h))
                     }
                     val cp = snap.cells[idx]
                     if (cp != 0 && cp != 32 && attrs and Attr.INVISIBLE == 0) {
-                        val ch = String(Character.toChars(cp))
-                        val style = android.graphics.Paint(paint).apply {
-                            color = fg.toArgb()
-                            isFakeBoldText = attrs and Attr.BOLD != 0
-                            textSkewX = if (attrs and Attr.ITALIC != 0) -0.25f else 0f
-                            isStrikeThruText = attrs and Attr.STRIKE != 0
-                            isUnderlineText = attrs and Attr.UNDERLINE != 0
-                            alpha = if (attrs and Attr.DIM != 0) 160 else 255
+                        // Batch the run of adjacent cells sharing this exact
+                        // style into one drawText (allocation-free per cell).
+                        runText.setLength(0)
+                        runText.appendCodePoint(cp)
+                        var j = c + 1
+                        while (j < snap.cols) {
+                            val jidx = r * snap.cols + j
+                            if (snap.attrs[jidx] and Attr.WIDE_CONT != 0) break
+                            val jcp = snap.cells[jidx]
+                            if (jcp == 0 || jcp == 32) break
+                            val jattrs = snap.attrs[jidx]
+                            if (jattrs != attrs) break
+                            var jfg = if (snap.fg[jidx] == 0xFFFF_FFFF.toInt()) {
+                                scheme.fgColor()
+                            } else {
+                                argb(snap.fg[jidx])
+                            }
+                            if (attrs and Attr.REVERSE != 0) {
+                                val jbgRaw = snap.bg[jidx]
+                                jfg = if (jbgRaw == 0xFFFF_FFFF.toInt()) {
+                                    scheme.bgColor()
+                                } else {
+                                    argb(jbgRaw)
+                                }
+                            }
+                            if (jfg != fg) break
+                            runText.appendCodePoint(jcp)
+                            j++
                         }
+                        cellPaint.color = fg.toArgb()
+                        cellPaint.isFakeBoldText = attrs and Attr.BOLD != 0
+                        cellPaint.textSkewX = if (attrs and Attr.ITALIC != 0) -0.25f else 0f
+                        cellPaint.isStrikeThruText = attrs and Attr.STRIKE != 0
+                        cellPaint.isUnderlineText = attrs and Attr.UNDERLINE != 0
+                        cellPaint.alpha = if (attrs and Attr.DIM != 0) 160 else 255
                         drawContext.canvas.nativeCanvas.drawText(
-                            ch, c * w, r * h - paint.ascent(), style,
+                            runText, 0, runText.length, c * w, baseline, cellPaint,
                         )
+                        c = j
+                    } else {
+                        c++
                     }
                 }
             }

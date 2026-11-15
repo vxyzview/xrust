@@ -4,7 +4,7 @@
 
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicI64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant};
 
 use xrust_core::android_jni::Session;
@@ -28,6 +28,7 @@ fn make_session() -> Arc<Session> {
         id,
         pty: Mutex::new(None),
         term: Mutex::new(Terminal::new(100, 30, 2000)),
+        seq_cv: Condvar::new(),
         listener: Mutex::new(None),
         exit_code: Mutex::new(None),
         reader: Mutex::new(None),

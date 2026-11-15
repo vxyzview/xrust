@@ -1,5 +1,33 @@
 # Release notes
 
+## v1.1.0 — smooth, faster, fluid
+
+### Input latency & concurrency (Rust core)
+- `nativePoll` now sleeps on a per-session condvar that the reader thread
+  signals after every feed: keystroke echo and program output reach the UI
+  within microseconds, instead of up to one 20ms sleep quantum later, with
+  no busy mutex churn while idle.
+- Keystroke / paste writes copy the pty fd under the mutex and write
+  without it — a paste into a flooded pipe can no longer freeze concurrent
+  typing for up to 200ms per EAGAIN retry.
+- `mem::take` parser swap in `Term::feed` (clippy 1.100 clean).
+
+### Terminal rendering (Compose)
+- The draw loop reuses one `Paint` and one `StringBuilder`: the old loop
+  allocated a fresh Paint per visible cell per frame (~1000 objects/frame,
+  GC jank during scroll floods).
+- Same-style character runs are batched into a single `drawText` call,
+  cutting JNI text calls roughly an order of magnitude on ordinary output.
+
+### App fluidity (Compose)
+- Navigation transitions switched from the sluggish ~700ms default fade to
+  snappy ~200ms fade + slide (forward and pop).
+- Poll loop throttles to 8ms between refreshes under output floods, so a
+  `cat` of a huge file cannot spin the dispatcher, while staying above
+  display cadence; redundant dispatcher hop removed.
+- LazyList `contentType` hints on Files / Profiles / Color schemes rows
+  improve item reuse while scrolling.
+
 ## Unreleased
 
 ### Responsive UI/UX for all window sizes

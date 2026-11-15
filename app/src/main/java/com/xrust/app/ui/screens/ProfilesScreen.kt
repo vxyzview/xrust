@@ -52,7 +52,7 @@ fun ProfilesScreen(profilesStore: ProfilesStore, nav: NavHostController) {
         ResponsivePane(maxContentWidth = 600.dp) {
         LazyColumn(Modifier.fillMaxSize().padding(padding)) {
             item { TopAppBar(title = { Text("Profiles") }) }
-            items(profiles, key = { it.id }) { p ->
+            items(profiles, key = { it.id }, contentType = { "profile" }) { p ->
                 Card(
                     Modifier.fillMaxWidth().padding(12.dp, 6.dp),
                     onClick = { nav.navigate(Routes.profileEdit(p.id)) },

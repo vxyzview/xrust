@@ -3,6 +3,11 @@ package com.xrust.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -195,7 +200,17 @@ private fun AppBottomBar(nav: NavHostController, route: String) {
 
 @Composable
 private fun AppNavHost(nav: NavHostController, modifier: Modifier) {
-    NavHost(nav, startDestination = Routes.SESSIONS, modifier = modifier) {
+    NavHost(
+        nav,
+        startDestination = Routes.SESSIONS,
+        modifier = modifier,
+        // Snappy ~200ms fade+slide (the ~700ms default fade feels sluggish
+        // and blocks the incoming screen longer than one frame budget).
+        enterTransition = { fadeIn(tween(180)) + slideInHorizontally(tween(220)) { it / 8 } },
+        exitTransition = { fadeOut(tween(140)) },
+        popEnterTransition = { fadeIn(tween(180)) + slideInHorizontally(tween(220)) { -it / 8 } },
+        popExitTransition = { fadeOut(tween(140)) + slideOutHorizontally(tween(220)) { it / 8 } },
+    ) {
         composable(Routes.SESSIONS) {
             SessionsScreen(
                 installer = installer,

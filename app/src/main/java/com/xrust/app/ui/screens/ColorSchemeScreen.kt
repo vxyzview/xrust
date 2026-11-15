@@ -37,7 +37,7 @@ fun ColorSchemeScreen(settingsRepo: SettingsRepository, nav: NavHostController) 
     ResponsivePane(maxContentWidth = 640.dp) {
     LazyColumn(Modifier.fillMaxSize().padding(bottom = 16.dp)) {
         item { TopAppBar(title = { Text("Color schemes") }) }
-        items(ALL_TERMINAL_SCHEMES, key = { it.name }) { scheme ->
+        items(ALL_TERMINAL_SCHEMES, key = { it.name }, contentType = { "scheme" }) { scheme ->
             Card(
                 Modifier.fillMaxWidth().padding(12.dp, 6.dp),
                 shape = RoundedCornerShape(10.dp),
